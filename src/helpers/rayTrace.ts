@@ -1,9 +1,9 @@
 import * as Scene from '../engine/scene';
 import { WebGLRenderer } from '../engine/renderer';
-import { VertexBufferObject, setCanvasFullScreen, uniform, BufferObject } from '../engine/glUtils';
+import { VertexBufferObject, setCanvasFullScreen } from '../engine/glUtils';
 import Loader from '../engine/loader';
+import { screen_quad } from '../engine/mesh';
 import { ShaderManager } from '../engine/shader';
-import { mat4, vec3 } from '../engine/MV';
 
 export const makeDivideCurve = () => {
   let camera: Scene.Camera;
@@ -16,7 +16,7 @@ export const makeDivideCurve = () => {
   const gl = renderer.getGLRenderContext();
 
   loader = new Loader('./assets/shader/');
-  loader.load(['terrain.vert', 'terrain.frag', 'transform.glsl', 'sunlight.glsl']);
+  loader.load(['raytrace.vert', 'raytrace.frag']);
   loader.setOnRendy(init);
 
   function init() {
@@ -24,25 +24,15 @@ export const makeDivideCurve = () => {
 
     shaderManager = new ShaderManager(loader.resources, gl);
 
-    const terrainShader = shaderManager.get('terrain');
+    const raytraceShader = shaderManager.get('raytrace');
 
     camera = new Scene.Camera();
     camera.position = new Float32Array([0, 10, 80]);
 
-    const positionVbo = new VertexBufferObject(new Float32Array([]), gl);
-    const vpositionVbo = new BufferObject(new Float32Array([]), gl);
+    const positionVbo = new VertexBufferObject(screen_quad(), gl);
 
-    mesh = new Scene.SimpleMesh({ position: positionVbo, normal: vpositionVbo });
-    const transform = new Scene.Transform([mesh]);
-    material = new Scene.Material(
-      terrainShader,
-      {
-        color: uniform.Vec3([0.8, 0.5, 0.5]),
-        sunColor: uniform.Vec3([0.5, 0.5, 0.5]),
-        sunDirection: uniform.Vec3(vec3.normalize(new Float32Array([0.3, 0.6, 0.2]))),
-      },
-      [transform],
-    );
+    mesh = new Scene.SimpleMesh({ position: positionVbo });
+    material = new Scene.Material(raytraceShader, {}, [mesh]);
 
     scene = new Scene.Graph();
 
@@ -52,15 +42,6 @@ export const makeDivideCurve = () => {
     renderer.start();
     document.querySelector('ion-content').appendChild(renderer.domElement);
     setCanvasFullScreen(renderer.domElement, scene);
-
-    initModeView();
-
-    function initModeView() {
-      const FAR_AWAY = 10;
-      const HEIGHT = 10;
-      mat4.translate(transform.wordMatrix, new Float32Array([-FAR_AWAY / 2, -HEIGHT / 2, -FAR_AWAY / 2]));
-      mat4.scale(transform.wordMatrix, new Float32Array([FAR_AWAY, HEIGHT, FAR_AWAY]));
-    }
   }
 
   function animation(_time: number) {
