@@ -91,7 +91,6 @@ export const makeRayTrace = () => {
     const scemeObject = makeScene(gl);
     mesh = new Scene.SimpleMesh({ position: positionVbo });
     material = new Scene.Material(raytraceShader, scemeObject, [mesh]);
-
     scene = new Scene.Graph();
 
     scene.append(material);
