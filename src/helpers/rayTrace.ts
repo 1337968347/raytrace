@@ -8,7 +8,7 @@ import { Sphere, Plane, RenderObject, Light } from './object';
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([0.0, 1.0, 0.0, 1.0], [1.0, 0.0, 0.0, 0.3], [0.3, 0.3, 0.0, 0.0]));
+  renderObjects.push(new Sphere([0.0,1.01,0.0,1.0], [1.0, 0.0, 0.0, 0.3], [0.3, 0.3, 0.0, 0.0]));
   renderObjects.push(new Sphere([0.5, 1.0, 0.0, 0.5], [0.0, 1.0, 0.0, 0.3], [0.3, 0.3, 0.0, 0.0]));
   renderObjects.push(new Light([0.5, 4.0, 0.0, 0.5], [0.0, 0.0, 1.0, 0.3]));
   return buildScene(renderObjects, gl);
@@ -54,12 +54,15 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
   }
 
   return {
-    objects: new Texture2D(new Float32Array(objects), gl, objectSideList),
-    objectPositions: new Texture2D(new Float32Array(objectPositions), gl, objectSideList),
-    objectMaterials: new Texture2D(new Float32Array(objectMaterials), gl, objectSideList),
-    lights: new Texture2D(new Float32Array(lights), gl, lightSideList),
+    objects: new Texture2D(new Uint8Array(objects), gl, objectSideList),
+    objectPositions: new Texture2D(new Uint8Array(objectPositions), gl, objectSideList),
+    objectMaterials: new Texture2D(new Uint8Array(objectMaterials), gl, objectSideList),
+    lights: new Texture2D(new Uint8Array(lights), gl, lightSideList),
     numObjects: uniform.Int(numObjects),
+    uResolution: uniform.Vec2([600,500]),
     numLight: uniform.Int(numLight),
+    objectTextureSize: objectSideList,
+    lightTextureSize: lightSideList
   };
 }
 
@@ -85,7 +88,6 @@ export const makeRayTrace = () => {
     const raytraceShader = shaderManager.get('raytrace');
 
     camera = new Scene.Camera();
-    camera.position = new Float32Array([0, 10, 80]);
 
     const positionVbo = new VertexBufferObject(screen_quad(), gl);
     const scemeObject = makeScene(gl);
