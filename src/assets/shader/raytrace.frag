@@ -12,7 +12,7 @@ uniform sampler2D objectPositions; // [x, y, z, width]
 uniform sampler2D objectMaterials; // [r, g, b, diffues]
 uniform sampler2D objectMaterialsExtended; // [specular, relefction, null , null]
 
-uniform sampler2D lights;
+uniform sampler2D lights; // [x, y , z, null]
 uniform sampler2D lightMaterials;
 
 uniform int numObjects;
@@ -64,12 +64,12 @@ void intersect(in vec3 origin, in vec3 direction, inout float closestIntersectio
             break;
         }
 
-        int objectType = int(texture2D(objects, vec2(1.0, it)).y * 256.0);
+        int objectType = int(texture2D(objects, vec2(0.0, it)).y * 256.0);
 
         if(objectType == SPHERE) {
-            iSphere(it, origin, direction, texture2D(objectPositions, vec2(1.0, it)), closestIntersection, closestID);
+            iSphere(it, origin, direction, texture2D(objectPositions, vec2(0.0, it)), closestIntersection, closestID);
         } else if(objectType == PLANE) {
-            iPlane(it, origin, direction, texture2D(objectPositions, vec2(1.0, it)).xyz, closestIntersection, closestID);
+            iPlane(it, origin, direction, texture2D(objectPositions, vec2(0.0, it)).xyz, closestIntersection, closestID);
         }
 
         it += step;
@@ -89,12 +89,11 @@ vec3 nPhone(in vec3 plane) {
 
 // 获取法向量
 vec3 normal(in vec3 position, in float ID) {
-    if(int(texture2D(objects, vec2(1.0, ID)).y * 256.0) == SPHERE) {
-        return nSphere(position, texture2D(objectPositions, vec2(1.0, ID)).xyz);
-    } else if(int(texture2D(objects, vec2(1.0, ID)).y * 256.0) == PLANE) {
-        return nPhone(texture2D(objectPositions, vec2(1.0, ID)).xyz);
+    if(int(texture2D(objects, vec2(0.0, ID)).y * 256.0) == SPHERE) {
+        return nSphere(position, texture2D(objectPositions, vec2(0.0, ID)).xyz);
+    } else if(int(texture2D(objects, vec2(0.0, ID)).y * 256.0) == PLANE) {
+        return nPhone(texture2D(objectPositions, vec2(0.0, ID)).xyz);
     }
-
     return vec3(0.0);
 }
 
@@ -103,7 +102,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in float ID)
     vec3 intersection = origin + t * direction;
     vec3 norm = normal(intersection, ID);
 
-    vec3 color = 0.1 * texture2D(objectMaterials, vec2(1.0, ID)).xyz;
+    vec3 color = 0.1 * texture2D(objectMaterials, vec2(0.0, ID)).xyz;
 
     float step = 1.0 / float(numLight);
     float it = step;
@@ -114,7 +113,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in float ID)
         }
 
         // 试探光线
-        vec3 lightdir = normalize(texture2D(lights, vec2(1.0, it)).xyz - intersection);
+        vec3 lightdir = normalize(texture2D(lights, vec2(0.0, it)).xyz - intersection);
 
         float shadowT = 1000.0;
         float shadowID = -1.0;

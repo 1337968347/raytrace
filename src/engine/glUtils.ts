@@ -23,6 +23,12 @@ export const Mat3 = value => {
   }, value);
 };
 
+export const Vec2 = value => {
+  return createGlValue((location: WebGLUniformLocation, gl: WebGLRenderingContext) => {
+    gl.uniform2f(location, value[0], value[1]);
+  }, value);
+};
+
 export const Vec3 = value => {
   return createGlValue((location: WebGLUniformLocation, gl: WebGLRenderingContext) => {
     gl.uniform3fv(location, value);
@@ -44,6 +50,7 @@ export const Int = value => {
 export const uniform = {
   Mat4,
   Mat3,
+  Vec2,
   Vec3,
   Vec4,
   Int,
@@ -51,19 +58,18 @@ export const uniform = {
 export class Texture2D {
   gl: WebGLRenderingContext;
   texture: WebGLTexture;
-  source: TexImageSource;
+  source: Float32Array;
   unit: number = -1;
 
-  constructor(source: TexImageSource, gl: WebGLRenderingContext) {
+  constructor(source: Float32Array, gl: WebGLRenderingContext, size: number) {
     this.source = source;
     this.gl = gl;
     this.texture = this.gl.createTexture();
     this.bindTexture();
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    gl.getExtension('OES_texture_float');
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.FLOAT, source);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   }
 
   bindTexture(unit?: number) {

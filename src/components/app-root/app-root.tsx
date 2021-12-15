@@ -1,5 +1,5 @@
 import { Component, Element, h } from '@stencil/core';
-import { makeDivideCurve } from '../../helpers/rayTrace';
+import { makeRayTrace } from '../../helpers/rayTrace';
 
 @Component({
   tag: 'app-root',
@@ -10,7 +10,7 @@ export class AppRoot {
 
   componentDidLoad() {
     document.querySelector('ion-content').innerHTML = '';
-    makeDivideCurve();
+    makeRayTrace();
   }
 
   render() {
