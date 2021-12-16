@@ -24,10 +24,11 @@ uniform float lightTextureSize;
 void iSphere(in vec2 ID, in vec3 origin, in vec3 direction, in vec4 sphere, inout float closestIntersection, inout vec2 closestID) {
     // p(x) = o + t*d; 光线
     // (p-c)(p-c) = r^2 球
-    // (d^2) * t^2 + (2d(o-c)) * t + (o-c)^2 - r^2 = 0 光线跟球的交点
+    // (d^2) * t^2 + (2d(o-c)) * t + (o-c)^2 - r^2 = 0 光线跟球的交点 ---------------------
     // ax^2 + bx + c =0
+    // a = d *d = 1
     float a = dot(direction, direction);
-    float b = 2.0 * dot(direction, origin - sphere.xyz);
+    float b = 2.0 * dot(origin - sphere.xyz, direction);
     float c = dot(origin - sphere.xyz, origin - sphere.xyz) - sphere.w * sphere.w;
 
     // 判别式
@@ -35,7 +36,7 @@ void iSphere(in vec2 ID, in vec3 origin, in vec3 direction, in vec4 sphere, inou
     if(disc < 0.0)
         return;
     // p(x) = o + t*d; 光线的t
-    float t = -(b - sqrt(disc)) / 2.0;
+    float t = -(b + sqrt(disc)) / 2.0;
 
     if(t > 0.0 && t < closestIntersection) {
         closestIntersection = t;
@@ -58,30 +59,29 @@ void iPlane(in vec2 ID, in vec3 origin, in vec3 direction, in vec3 normal, inout
 
 // 求光线与场景中物体的最近交点
 void intersect(in vec3 origin, in vec3 direction, inout float closestIntersection, inout vec2 closestID) {
- 	float it = 1.0/objectTextureSize/2.0;
-    float ity = 1.0/objectTextureSize/2.0;
-    
-    float step = 1.0/objectTextureSize;
+    float it = 1.0 / objectTextureSize / 2.0;
+    float ity = 1.0 / objectTextureSize / 2.0;
 
-    for(int i = 0; i < MAX_OBJECTS; i++) {
+    float step = 1.0 / objectTextureSize;
+
+    for(int i = 0; i < 10; i++) {
         if(i >= numObjects) {
             break;
         }
 
-        int objectType = int(texture2D(objects, vec2(it,ity)).x * 256.0);
+        int objectType = int(texture2D(objects, vec2(it, ity)).x * 256.0);
 
         if(objectType == SPHERE) {
-            iSphere(vec2(it,ity), origin, direction, texture2D(objectPositions, vec2(it,ity)), closestIntersection, closestID);
+            iSphere(vec2(it, ity), origin, direction, texture2D(objectPositions, vec2(it, ity)), closestIntersection, closestID);
         } else if(objectType == PLANE) {
-            iPlane(vec2(it,ity), origin, direction, texture2D(objectPositions, vec2(it,ity)).xyz, closestIntersection, closestID);
+            iPlane(vec2(it, ity), origin, direction, texture2D(objectPositions, vec2(it, ity)).xyz, closestIntersection, closestID);
         }
 
-        it+=step;
-				
-        if(it > 1.0)
-        {
+        it += step;
+
+        if(it > 1.0) {
             ity += step;
-            it = step/2.0;
+            it = step / 2.0;
         }
     }
 
@@ -112,31 +112,37 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
     vec3 intersection = origin + t * direction;
     vec3 norm = normal(intersection, ID);
 
-    vec3 color = 0.2 * texture2D(objectMaterials, ID).xyz;
+    vec3 color = 0.02 * texture2D(objectMaterials, ID).xyz;
 
-    float it = 1.0/lightTextureSize/2.0;
-    float ity = 1.0/lightTextureSize/2.0;
+    float it = 1.0 / lightTextureSize / 2.0;
+    float ity = 1.0 / lightTextureSize / 2.0;
 
-    float step = 1.0/lightTextureSize;
+    float step = 1.0 / lightTextureSize;
 
-    for(int i = 0; i < MAX_LIGHT; i++) {
+    for(int i = 0; i < 10; i++) {
         if(i > numLight) {
             break;
         }
 
         // 试探光线
-        vec3 lightdir = normalize(texture2D(lights, vec2(it,ity)).xyz - intersection);
-
+        vec3 lightdir = normalize(texture2D(lights, vec2(it, ity)).xyz - intersection);
         float shadowT = 1000.0;
         vec2 shadowID = vec2(-1.0);
 
         intersect(intersection, lightdir, shadowT, shadowID);
 
-        if(shadowID.x < 0.0) {
-            color += texture2D(lightMaterials, ID).xyz;
+        if(shadowID.x < 0.0 || shadowT < 0.01 ) {
+            float dp = dot(norm, lightdir);
+            if(dp > 0.0)
+                color += texture2D(objectMaterials, ID).w * dp * texture2D(objectMaterials, ID).xyz * texture2D(lightMaterials, vec2(it, ity)).xyz;
+
         }
 
         it += step;
+        if(it > 1.0) {
+            ity += step;
+            it = step / 2.0;
+        }
     }
 
     return color;
@@ -145,8 +151,8 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.0, 0.0, 100.0);
-    vec3 direction = vec3(normalize(gl_FragCoord.xy / uResolution - 0.5), -1.0);
+    vec3 origin = vec3(0.0, 1.0, 30.0);
+    vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
 
     float t = 1000.0;
     vec2 ID = vec2(-1.0);
@@ -156,5 +162,7 @@ void main() {
     if(t < 1000.0) {
         vec4 lightColor = vec4(computeLighting(origin, direction, t, ID), 1.0);
         gl_FragColor += lightColor;
+    } else {
+        gl_FragColor += vec4(0.3, 0.0, 0.0, 1.0);
     }
 }

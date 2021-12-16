@@ -271,7 +271,7 @@ export class WebGLRenderer {
   constructor() {
     this.clock = new Clock();
     this.domElement = document.createElement('canvas');
-    this.gl = this.domElement.getContext('webgl2');
+    this.gl = this.domElement.getContext('webgl');
 
     this.gl.enable(this.gl.DEPTH_TEST);
     this.inputHandler = new InputHandler(this.domElement);

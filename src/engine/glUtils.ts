@@ -58,18 +58,18 @@ export const uniform = {
 export class Texture2D {
   gl: WebGLRenderingContext;
   texture: WebGLTexture;
-  source: Uint8Array;
+  source: any;
   unit: number = -1;
 
-  constructor(source: Uint8Array, gl: WebGLRenderingContext, size: number) {
+  constructor(source: any, gl: WebGLRenderingContext, size: number, type: number = gl.FLOAT) {
     this.source = source;
     this.gl = gl;
     this.texture = this.gl.createTexture();
     this.bindTexture();
     gl.getExtension('OES_texture_float');
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(source));
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, type, source);
+  	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   }
 
   bindTexture(unit?: number) {
@@ -192,7 +192,7 @@ export class VertexBufferObject extends BufferObject {
   }
 
   drawTriangles() {
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, this.length/3);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, this.length / 3);
   }
 }
 
