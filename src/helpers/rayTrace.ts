@@ -8,13 +8,14 @@ import { Sphere, Plane, RenderObject, Light } from './object';
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([0.0, 2.0, 0.0, 1.5], [1.0, 1.0, 0.8, 0.7], [0.3, 0.3, 0.0, 0.0]));
+  renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [1.0, 1.0, 0.8, 0.7], [0.4, 20.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([0.5, 3, 5, 0.2], [1.0, 0.0, 0.8, 0.7], [0.9, 10.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([2.2, 3.01, 0.0, 0.9], [0.0, 1.0, 0.0, 0.7], [0.3, 20.0, 0.0, 0.0]));
 
-  renderObjects.push(new Sphere([2.5, 3.01, 0.0, 1.2], [0.0, 1.0, 0.0, 0.7], [0.3, 0.3, 0.0, 0.0]));
-  renderObjects.push(new Plane([0.0, 1.0, 0.0, 0.0], [0.8, 0.8, 0.8, 0.9], [0.3, 0.3, 0.0, 0.0]));
+  renderObjects.push(new Plane([0.0, 1.0, 0.0, 0.0], [1.0, 1.0, 1.0, 0.4], [0.1, 0.3, 0.0, 0.0]));
 
-  renderObjects.push(new Light([0.0, 9.0, 5.0, 0.0], [1.0, 1.0, 1.0,  0.0]));
-  renderObjects.push(new Light([0.0, 12.0, -7.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
+  renderObjects.push(new Light([2.0, 7.3, 8.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
+  renderObjects.push(new Light([0.0, 8.0, 3.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
   return buildScene(renderObjects, gl);
 }
 
@@ -56,11 +57,11 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
     lights = lights.concat([0, 0, 0, 0]);
     lightMaterials = lightMaterials.concat([0, 0, 0, 0]);
   }
-
   return {
     objects: new Texture2D(new Uint8Array(objects), gl, objectSideList, gl.UNSIGNED_BYTE),
     objectPositions: new Texture2D(new Float32Array(objectPositions), gl, objectSideList),
     objectMaterials: new Texture2D(new Float32Array(objectMaterials), gl, objectSideList),
+    objectMaterialsExtended: new Texture2D(new Float32Array(objectMaterialsExtended), gl, objectSideList),
     lights: new Texture2D(new Float32Array(lights), gl, lightSideList),
     lightMaterials: new Texture2D(new Float32Array(lightMaterials), gl, lightSideList),
     numObjects: uniform.Int(numObjects),
@@ -95,9 +96,9 @@ export const makeRayTrace = () => {
     camera = new Scene.Camera();
 
     const positionVbo = new VertexBufferObject(screen_quad(), gl);
-    const scemeObject = makeScene(gl);
+    const sceneObject = makeScene(gl);
     mesh = new Scene.SimpleMesh({ position: positionVbo });
-    material = new Scene.Material(raytraceShader, scemeObject, [mesh]);
+    material = new Scene.Material(raytraceShader, sceneObject, [mesh]);
     scene = new Scene.Graph();
 
     scene.append(material);
@@ -105,10 +106,12 @@ export const makeRayTrace = () => {
     renderer.setAnimationLoop(animation);
     renderer.start();
     document.querySelector('ion-content').appendChild(renderer.domElement);
-    setCanvasFullScreen(renderer.domElement, scene, 1000, 900);
-  }
+    setCanvasFullScreen(renderer.domElement, scene);
 
-  function animation(_time: number) {
-    renderer.render(scene, camera);
+    function animation(_time: number) {
+      sceneObject.uResolution = uniform.Vec2([window.innerWidth, window.innerHeight]);
+
+      renderer.render(scene, camera);
+    }
   }
 };

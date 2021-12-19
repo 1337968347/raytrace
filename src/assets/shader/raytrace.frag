@@ -10,7 +10,7 @@ uniform vec2 uResolution;
 uniform sampler2D objects;  //[index, type, null, null]
 uniform sampler2D objectPositions; // [x, y, z, width]
 uniform sampler2D objectMaterials; // [r, g, b, diffues]
-uniform sampler2D objectMaterialsExtended; // [specular, relefction, null , null]
+uniform sampler2D objectMaterialsExtended; // [specular, shininess, relefction , null]
 
 uniform sampler2D lights; // [x, y , z, null]
 uniform sampler2D lightMaterials;
@@ -26,14 +26,13 @@ void iSphere(in vec2 ID, in vec3 origin, in vec3 direction, in vec4 sphere, inou
     // (p-c)(p-c) = r^2 球
     // (d^2) * t^2 + (2d(o-c)) * t + (o-c)^2 - r^2 = 0 光线跟球的交点 ---------------------
     // ax^2 + bx + c =0
-    // a = d *d = 1
-    float a = dot(direction, direction);
+    // d 是单位向量  a = d *d = 1
     float b = 2.0 * dot(origin - sphere.xyz, direction);
     float c = dot(origin - sphere.xyz, origin - sphere.xyz) - sphere.w * sphere.w;
 
     // 判别式
-    float disc = b * b - 4.0 * a * c;
-    if(disc < 0.0)
+    float disc = b * b - 4.0 * c;
+    if(disc <= 0.0)
         return;
     // p(x) = o + t*d; 光线的t
     float t = -(b + sqrt(disc)) / 2.0;
@@ -49,7 +48,8 @@ void iPlane(in vec2 ID, in vec3 origin, in vec3 direction, in vec3 normal, inout
     // (p - p0) * n = 0 平面
     // p = o + td 光线
     // (o + td - p0) * n = 0  --> tdn = (p0 - o) n --> t = (p0 - 0)n / dn
-    float t = (0.0 - dot(origin, normal)) / dot(direction, normal);
+
+    float t = (dot(vec3(0.0, 0.0, 0.0), normal) - dot(origin, normal)) / dot(direction, normal);
 
     if(t > 0.0 && t < closestIntersection) {
         closestIntersection = t;
@@ -64,7 +64,7 @@ void intersect(in vec3 origin, in vec3 direction, inout float closestIntersectio
 
     float step = 1.0 / objectTextureSize;
 
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < MAX_OBJECTS; i++) {
         if(i >= numObjects) {
             break;
         }
@@ -119,22 +119,37 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
 
     float step = 1.0 / lightTextureSize;
 
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < MAX_LIGHT; i++) {
         if(i > numLight) {
             break;
         }
 
-        // 试探光线
         vec3 lightdir = normalize(texture2D(lights, vec2(it, ity)).xyz - intersection);
         float shadowT = 1000.0;
         vec2 shadowID = vec2(-1.0);
 
-        intersect(intersection, lightdir, shadowT, shadowID);
-
+        // intersection = o + td; 因为t的浮点数精度问题。
+        // 可能交点会被物体遮盖； 解决方法就是交点往光源的方向靠近。让交点离开相交的物体
+        intersect(intersection + lightdir * 0.00001, lightdir, shadowT, shadowID);
+        // 试探光线
         if(shadowID.x < 0.0 || shadowT < 0.01) {
             float dp = dot(norm, lightdir);
+            vec3 lightColor = texture2D(lightMaterials, vec2(it, ity)).xyz;
+            vec3 objectColor = texture2D(objectMaterials, ID).xyz;
+            float diffuseK = texture2D(objectMaterials, ID).w;
+
             if(dp > 0.0)
-                color += texture2D(objectMaterials, ID).w * dp * texture2D(objectMaterials, ID).xyz * texture2D(lightMaterials, vec2(it, ity)).xyz;
+                color += diffuseK * dp * objectColor * lightColor;
+
+            // 镜面反射
+            // 反射光线 r = 2(l * n)n - l 
+            vec3 R = -(2.0 * dot(lightdir, norm) * norm - lightdir);
+            dp = dot(R, direction);
+            float k = texture2D(objectMaterialsExtended, ID).x;
+            float shininess = texture2D(objectMaterialsExtended, ID).y;
+
+            if(dp > 0.0)
+                color += k * pow(dp, shininess) * lightColor;
 
         }
 
@@ -151,7 +166,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.0, 1.0, 10.0);
+    vec3 origin = vec3(0.0, 3, 12.0);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
 
     float t = 1000.0;
@@ -159,10 +174,10 @@ void main() {
     intersect(origin, direction, t, ID);
 
     // 相交
-    if(t < 1000.0) {
+    if(ID.x > -1.0) {
         vec4 lightColor = vec4(computeLighting(origin, direction, t, ID), 1.0);
         gl_FragColor += lightColor;
     } else {
-        gl_FragColor += vec4(0.0, 0.0, 0.0, 1.0);
+        gl_FragColor += vec4(0.2, 0.2, 0.4, 1.0);
     }
 }
