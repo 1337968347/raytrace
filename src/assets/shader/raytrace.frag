@@ -4,6 +4,7 @@ precision highp float;
 #define MAX_LIGHT 10
 #define SPHERE 0
 #define PLANE 1
+#define MAX_RECURSION 4
 
 uniform vec2 uResolution;
 
@@ -163,10 +164,73 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
     return color;
 }
 
+vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
+    vec4 color[MAX_RECURSION];
+    float reflCoefficient[MAX_RECURSION];
+    vec4 matColor[MAX_RECURSION];
+
+    int recursion = 0;
+
+    for(int i = 0; i < MAX_RECURSION; i++) {
+        recursion = i;
+
+        vec3 intersection = origin + t * direction;
+        vec3 norm = normal(intersection, ID);
+
+        direction = direction - 2.0 * dot(direction, norm) * norm;
+        origin = intersection + direction * 0.00001;
+
+        vec2 reflID = vec2(-1.0, -1.0);
+        float reflT = 1000.0;
+
+				//intersect the reflected ray with the scene
+        intersect(origin, direction, reflT, reflID);
+
+				//if we intersected an object
+        if(reflID.x < 0.0) {
+            color[i] = vec4(0.0, 0.0, 0.4, 1.0);
+            reflCoefficient[i] = texture2D(objectMaterialsExtended, ID).z;
+            matColor[i] = texture2D(objectMaterials, ID);
+            break;
+        }
+
+        vec3 colort = computeLighting(origin, direction, reflT, reflID);
+        color[i] = vec4(colort, 1.0);
+        reflCoefficient[i] = texture2D(objectMaterialsExtended, ID).z;
+        matColor[i] = texture2D(objectMaterials, ID);
+
+        if(reflCoefficient[i] < 0.000001)
+            break;
+
+        ID = reflID;
+        t = reflT;
+
+    }
+
+    vec4 sum = vec4(0.0, 0.0, 0.0, 1.0);
+
+    for(int i = 0; i < MAX_RECURSION; i++) {
+        if(i > recursion)
+            break;
+
+        vec4 prod = vec4(1.0, 1.0, 1.0, 1.0);
+        for(int j = 0; j < MAX_RECURSION; j++) {
+            if(j > i)
+                break;
+
+            prod *= reflCoefficient[j] * matColor[j];
+        }
+
+        sum += color[i] * prod;
+    }
+
+    return sum;
+}
+
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.0, 3, 12.0);
+    vec3 origin = vec3(0.0, 2, 15.0);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
 
     float t = 1000.0;
@@ -177,6 +241,7 @@ void main() {
     if(ID.x > -1.0) {
         vec4 lightColor = vec4(computeLighting(origin, direction, t, ID), 1.0);
         gl_FragColor += lightColor;
+        gl_FragColor += reflection(origin, direction, t, ID);
     } else {
         gl_FragColor += vec4(0.2, 0.2, 0.4, 1.0);
     }
