@@ -8,13 +8,15 @@ import { Sphere, Plane, RenderObject, Light } from './object';
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [1.0, 1.0, 0.8, 0.7], [0.4, 50.0, 0.8, 0.0]));
-  renderObjects.push(new Sphere([0.5, 3, 5, 0.2], [1.0, 0.0, 0.8, 0.7], [0.9, 10.0, 1.0, 0.0]));
-  renderObjects.push(new Sphere([2.2, 3.01, 0.0, 0.9], [0.0, 1.0, 0.0, 0.7], [0.3, 50.0, 0.3, 0.0]));
+  renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [1.0, 1.0, 0.8, 0.3], [0.2, 50.0, 0.8, 0.0]));
+  renderObjects.push(new Sphere([0.8, 1, 5, 0.25], [1.0, 0.0, 0.8, 0.7], [0.9, 100.0, 1.0, 0.0]));
+  renderObjects.push(new Sphere([3.2, 3.01, 0.0, 0.9], [0.0, 1.0, 1.0, 0.5], [0.4, 50.0, 0.2, 0.0]));
+  renderObjects.push(new Sphere([0.2, 1.01, 2.0, 0.9], [0.0, 1.0, 0.0, 0.5], [0.6, 20.0, 0.3, 0.0]));
 
   renderObjects.push(new Plane([0.0, 1.0, 0.0, 0.0], [0.5, 0.5, 0.5, 0.4], [0.1, 0.3, 0.15, 0.0]));
 
-  renderObjects.push(new Light([-2.0, 7.3, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
+  renderObjects.push(new Light([-3.0, 7.3, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
+
   renderObjects.push(new Light([0.0, 8.0, 3.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
   return buildScene(renderObjects, gl);
 }
@@ -65,7 +67,7 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
     lights: new Texture2D(new Float32Array(lights), gl, lightSideList),
     lightMaterials: new Texture2D(new Float32Array(lightMaterials), gl, lightSideList),
     numObjects: uniform.Int(numObjects),
-    uResolution: uniform.Vec2([1000, 900]),
+    uResolution: uniform.Vec2([800, 800]),
     numLight: uniform.Int(numLight),
     objectTextureSize: objectSideList,
     lightTextureSize: lightSideList,
@@ -106,10 +108,10 @@ export const makeRayTrace = () => {
     renderer.setAnimationLoop(animation);
     renderer.start();
     document.querySelector('ion-content').appendChild(renderer.domElement);
-    setCanvasFullScreen(renderer.domElement, scene);
+    setCanvasFullScreen(renderer.domElement, scene, 800, 800);
 
     function animation(_time: number) {
-      sceneObject.uResolution = uniform.Vec2([window.innerWidth, window.innerHeight]);
+      // sceneObject.uResolution = uniform.Vec2([window.innerWidth, window.innerHeight]);
 
       renderer.render(scene, camera);
     }

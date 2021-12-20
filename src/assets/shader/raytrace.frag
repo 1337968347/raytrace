@@ -4,7 +4,7 @@ precision highp float;
 #define MAX_LIGHT 10
 #define SPHERE 0
 #define PLANE 1
-#define MAX_RECURSION 4
+#define MAX_RECURSION 5
 
 uniform vec2 uResolution;
 
@@ -113,7 +113,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
     vec3 intersection = origin + t * direction;
     vec3 norm = normal(intersection, ID);
 
-    vec3 color = 0.1 * texture2D(objectMaterials, ID).xyz;
+    vec3 color = 0.05 * texture2D(objectMaterials, ID).xyz;
 
     float it = 1.0 / lightTextureSize / 2.0;
     float ity = 1.0 / lightTextureSize / 2.0;
@@ -164,6 +164,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
     return color;
 }
 
+// 反射
 vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
     vec4 color[MAX_RECURSION];
     float reflCoefficient[MAX_RECURSION];
@@ -176,28 +177,27 @@ vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
 
         vec3 intersection = origin + t * direction;
         vec3 norm = normal(intersection, ID);
-
+        // 反射方向
         direction = direction - 2.0 * dot(direction, norm) * norm;
+        // 浮点数问题
         origin = intersection + direction * 0.00001;
 
         vec2 reflID = vec2(-1.0, -1.0);
         float reflT = 1000.0;
 
-				//intersect the reflected ray with the scene
+		//intersect the reflected ray with the scene
         intersect(origin, direction, reflT, reflID);
-
-				//if we intersected an object
-        if(reflID.x < 0.0) {
-            color[i] = vec4(0.0, 0.0, 0.4, 1.0);
+        // 相交
+        if(reflID.x >= 0.0) {
+            color[i] = vec4(computeLighting(origin, direction, reflT, reflID), 1.0);
+            reflCoefficient[i] = texture2D(objectMaterialsExtended, ID).z;
+            matColor[i] = texture2D(objectMaterials, ID);
+        } else {
+            color[i] = vec4(0.3, 0.6, 1.0, 1.0);
             reflCoefficient[i] = texture2D(objectMaterialsExtended, ID).z;
             matColor[i] = texture2D(objectMaterials, ID);
             break;
         }
-
-        vec3 colort = computeLighting(origin, direction, reflT, reflID);
-        color[i] = vec4(colort, 1.0);
-        reflCoefficient[i] = texture2D(objectMaterialsExtended, ID).z;
-        matColor[i] = texture2D(objectMaterials, ID);
 
         if(reflCoefficient[i] < 0.000001)
             break;
@@ -209,17 +209,12 @@ vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
 
     vec4 sum = vec4(0.0, 0.0, 0.0, 1.0);
 
+    vec4 prod = vec4(1.0, 1.0, 1.0, 1.0);
     for(int i = 0; i < MAX_RECURSION; i++) {
         if(i > recursion)
             break;
 
-        vec4 prod = vec4(1.0, 1.0, 1.0, 1.0);
-        for(int j = 0; j < MAX_RECURSION; j++) {
-            if(j > i)
-                break;
-
-            prod *= reflCoefficient[j] * matColor[j];
-        }
+        prod *= reflCoefficient[i] * matColor[i];
 
         sum += color[i] * prod;
     }
@@ -230,7 +225,7 @@ vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.0, 2, 15.0);
+    vec3 origin = vec3(0.4, 1.5, 12.0);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
 
     float t = 1000.0;
@@ -243,6 +238,6 @@ void main() {
         gl_FragColor += lightColor;
         gl_FragColor += reflection(origin, direction, t, ID);
     } else {
-        gl_FragColor += vec4(0.2, 0.2, 0.4, 1.0);
+        gl_FragColor += vec4(0.3, 0.6, 1.0, 1.0);
     }
 }
