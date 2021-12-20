@@ -9,15 +9,13 @@ import { Sphere, Plane, RenderObject, Light } from './object';
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
   renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [1.0, 1.0, 0.8, 0.3], [0.2, 50.0, 0.8, 0.0]));
-  renderObjects.push(new Sphere([0.8, 1, 5, 0.25], [1.0, 0.0, 0.8, 0.7], [0.9, 100.0, 1.0, 0.0]));
-  renderObjects.push(new Sphere([3.2, 3.01, 0.0, 0.9], [0.0, 1.0, 1.0, 0.5], [0.4, 50.0, 0.2, 0.0]));
-  renderObjects.push(new Sphere([0.2, 1.01, 2.0, 0.9], [0.0, 1.0, 0.0, 0.5], [0.6, 20.0, 0.3, 0.0]));
+  renderObjects.push(new Sphere([0.8, 2, 3, 0.25], [1.0, 0.0, 0.8, 0.7], [0.9, 100.0, 1.0, 0.0]));
 
-  renderObjects.push(new Plane([0.0, 1.0, 0.0, 0.0], [0.5, 0.5, 0.5, 0.4], [0.1, 0.3, 0.15, 0.0]));
+  renderObjects.push(new Plane([0.0, 1.0, 0.0, 0.0], [0.6, 0.6, 0.6, 0.4], [0.1, 0.3, 0.15, 0.0]));
 
   renderObjects.push(new Light([-3.0, 7.3, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
 
-  renderObjects.push(new Light([0.0, 8.0, 3.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
+  renderObjects.push(new Light([0.0, 4.0, 1.0, 0.0], [1.0, 1.0, 1.0, 0.0]));
   return buildScene(renderObjects, gl);
 }
 

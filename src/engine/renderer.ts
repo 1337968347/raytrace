@@ -272,6 +272,7 @@ export class WebGLRenderer {
     this.clock = new Clock();
     this.domElement = document.createElement('canvas');
     this.gl = this.domElement.getContext('webgl');
+    this.gl.getExtension('OES_texture_float');
 
     this.gl.enable(this.gl.DEPTH_TEST);
     this.inputHandler = new InputHandler(this.domElement);

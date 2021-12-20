@@ -66,7 +66,6 @@ export class Texture2D {
     this.gl = gl;
     this.texture = this.gl.createTexture();
     this.bindTexture();
-    gl.getExtension('OES_texture_float');
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, type, source);
   	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);

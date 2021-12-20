@@ -135,12 +135,18 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
         // 试探光线
         if(shadowID.x < 0.0 || shadowT < 0.01) {
             float dp = dot(norm, lightdir);
+            vec3 lightPosition = texture2D(lights, vec2(it, ity)).xyz;
+            vec3 objectPosition = texture2D(objectPositions, ID).xyz;
+
             vec3 lightColor = texture2D(lightMaterials, vec2(it, ity)).xyz;
             vec3 objectColor = texture2D(objectMaterials, ID).xyz;
             float diffuseK = texture2D(objectMaterials, ID).w;
 
+            // 距离
+            float d = distance(lightPosition, objectPosition);
+            float kd = 1.0 / (0.1 + 0.2 * d + 0.004 * d * d);
             if(dp > 0.0)
-                color += diffuseK * dp * objectColor * lightColor;
+                color += kd * diffuseK * dp * objectColor * lightColor;
 
             // 镜面反射
             // 反射光线 r = 2(l * n)n - l 
@@ -150,7 +156,7 @@ vec3 computeLighting(in vec3 origin, in vec3 direction, in float t, in vec2 ID) 
             float shininess = texture2D(objectMaterialsExtended, ID).y;
 
             if(dp > 0.0)
-                color += k * pow(dp, shininess) * lightColor;
+                color += kd * k * pow(dp, shininess) * lightColor;
 
         }
 
@@ -225,7 +231,7 @@ vec4 reflection(in vec3 origin, in vec3 direction, in float t, in vec2 ID) {
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.4, 1.5, 12.0);
+    vec3 origin = vec3(0.4, 1.5, 8.0);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
 
     float t = 1000.0;
