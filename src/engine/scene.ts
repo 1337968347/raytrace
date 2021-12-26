@@ -329,12 +329,12 @@ export class Uniforms extends Node {
 
 export class PostProcess extends Node {
   children: Node[];
-  constructor(shader: Shader, uniforms: UniformMap, gl: WebGLRenderingContext) {
+  constructor(shader: Shader, uniforms: UniformMap, gl: WebGLRenderingContext, childrens: Node[] = []) {
     super();
     const screenVbo = new VertexBufferObject(Mesh.screen_quad(), gl);
     const mesh = new SimpleMesh({ position: screenVbo });
     const material = new Material(shader, uniforms, [mesh]);
-    this.children = [material];
+    this.children = [...childrens, material];
   }
 }
 

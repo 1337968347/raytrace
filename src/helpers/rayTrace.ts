@@ -1,16 +1,20 @@
 import * as Scene from '../engine/scene';
 import { WebGLRenderer } from '../engine/renderer';
-import { VertexBufferObject, setCanvasFullScreen, Texture2D, uniform } from '../engine/glUtils';
+import { VertexBufferObject, setCanvasFullScreen, Texture2D, uniform, FrameBufferObject } from '../engine/glUtils';
 import Loader from '../engine/loader';
 import { screen_quad } from '../engine/mesh';
 import { ShaderManager } from '../engine/shader';
 import { Sphere, Plane, RenderObject } from './object';
 
+const size = 256;
+
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [1.0, 1.0, 1.8, 0.2]));
-  renderObjects.push(new Sphere([0.8, 2, 3, 0.25], [1.0, 1.0, 0.8, 0.9]));
-  renderObjects.push(new Sphere([0, -1, 0, 0.55], [0.5, 0.0, 0.8, 0.9]));
+  renderObjects.push(new Sphere([0.0, 2.5, 0.0, 1], [0.8, 0.8, 0.8, 0.2]));
+  renderObjects.push(new Sphere([0.8, 1.8, 3, 0.35], [0.8, 0.7, 0.8, 0.9]));
+  renderObjects.push(new Sphere([-1.3, 1.6, 2, 0.5], [0.5, 0.0, 0.8, 0.9]));
+
+  renderObjects.push(new Plane([0.0, 1, 0.0, 0.0], [0.7, 0.8, 0.8, 0.15]));
 
   return buildScene(renderObjects, gl);
 }
@@ -41,8 +45,10 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
     objectPositions: new Texture2D(new Float32Array(objectPositions), gl, objectSideList),
     objectMaterials: new Texture2D(new Float32Array(objectMaterials), gl, objectSideList),
     numObjects: uniform.Int(numObjects),
-    uResolution: uniform.Vec2([800, 800]),
+    uResolution: uniform.Vec2([size, size]),
     objectTextureSize: objectSideList,
+    timeSinceStart: Date.now() * 0.01,
+    dstep: uniform.Int(1),
   };
 }
 
@@ -57,34 +63,53 @@ export const makeRayTrace = () => {
   const gl = renderer.getGLRenderContext();
 
   loader = new Loader('./assets/shader/');
-  loader.load(['raytrace.vert', 'raytrace.frag']);
+  loader.load(['raytrace.vert', 'raytrace.frag', 'screen.vert', 'screen.frag', 'merge.vert', 'merge.frag']);
   loader.setOnRendy(init);
+  const finalFbo = new FrameBufferObject(gl, size, size);
+  // 步长
+  let dStep = 0;
 
   function init() {
     // 资源管理相关
-
     shaderManager = new ShaderManager(loader.resources, gl);
-
     const raytraceShader = shaderManager.get('raytrace');
+    const postShader = shaderManager.get('screen');
+    const mergeShader = shaderManager.get('merge');
+
+    const sceneObject = makeScene(gl);
+
+    const fbo1 = new FrameBufferObject(gl, size, size);
+    const fbo2 = new FrameBufferObject(gl, size, size);
 
     camera = new Scene.Camera();
-
     const positionVbo = new VertexBufferObject(screen_quad(), gl);
-    const sceneObject = makeScene(gl);
-    mesh = new Scene.SimpleMesh({ position: positionVbo });
-    material = new Scene.Material(raytraceShader, sceneObject, [mesh]);
-    scene = new Scene.Graph();
 
-    scene.append(material);
+    mesh = new Scene.SimpleMesh({ position: positionVbo });
+    material = new Scene.Material(raytraceShader, {}, [mesh]);
+    scene = new Scene.Graph();
+    const oneTimeTarget = new Scene.RenderTarget(fbo1, [material]);
+
+    const mergeTarget = new Scene.RenderTarget(fbo2, [new Scene.PostProcess(mergeShader, { texture: finalFbo, oneTimeTexture: fbo1 }, gl, [])]);
+    const mergeTarget1 = new Scene.RenderTarget(finalFbo, [new Scene.PostProcess(postShader, { texture: fbo2 }, gl, [])]);
+
+    const postprocess = new Scene.PostProcess(postShader, { texture: finalFbo }, gl, [oneTimeTarget, mergeTarget, mergeTarget1]);
+    const uniformPostProcess = new Scene.Uniforms(sceneObject, [postprocess]);
+
+    scene.append(uniformPostProcess);
 
     renderer.start();
     document.querySelector('ion-content').appendChild(renderer.domElement);
-    setCanvasFullScreen(renderer.domElement, scene, 400, 400);
+    setCanvasFullScreen(renderer.domElement, scene, size, size);
+    renderer.setAnimationLoop(animation);
 
+    sceneObject.uResolution = uniform.Vec2([size, size]);
 
-    sceneObject.uResolution = uniform.Vec2([400, 400]);
+    function animation(time) {
+      sceneObject.dstep = uniform.Int(dStep);
+      dStep++;
 
-    renderer.render(scene, camera);
- 
+      sceneObject.timeSinceStart = time;
+      renderer.render(scene, camera);
+    }
   }
 };

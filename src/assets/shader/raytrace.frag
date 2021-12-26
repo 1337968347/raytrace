@@ -7,6 +7,7 @@ precision highp float;
 #define MAX_RECURSION 5
 
 uniform vec2 uResolution;
+uniform float timeSinceStart;
 
 uniform sampler2D objects;  //[index, type, null, null]
 uniform sampler2D objectPositions; // [x, y, z, width]
@@ -44,7 +45,7 @@ void iPlane(in vec2 ID, in vec3 origin, in vec3 direction, in vec3 normal, inout
     // p = o + td 光线
     // (o + td - p0) * n = 0  --> tdn = (p0 - o) n --> t = (p0 - 0)n / dn
 
-    float t = (dot(vec3(0.0, 0.0, 0.0), normal) - dot(origin, normal)) / dot(direction, normal);
+    float t = (dot(vec3(0.0, 1.0, 0.0), normal) - dot(origin, normal)) / dot(direction, normal);
 
     if(t > 0.0 && t < closestIntersection) {
         closestIntersection = t;
@@ -102,12 +103,31 @@ vec3 normal(in vec3 position, in vec2 ID) {
     return vec3(0.0);
 }
 
-vec3 getRandomNormalInHemisphere(in vec3 v) {
-    return v;
+// 随机数
+float random(vec3 scale, float seed) {
+    return fract(sin(dot(gl_FragCoord.xyz + seed, scale)) * 43758.5453 + seed);
 }
 
-vec3 bounce(in vec3 ray, in vec3 norm) {
-    return ray - 2.0 * dot(ray, norm) * norm;
+// 半球向量
+vec3 getRandomNormalInHemisphere(float seed, vec3 normal) {
+    float u = random(vec3(12.9898, 78.233, 151.7182), seed);
+    float v = random(vec3(63.7264, 10.873, 623.6736), seed);
+    float r = sqrt(u);
+    float angle = 6.283185307179586 * v; 
+    // compute basis from normal
+    vec3 sdir, tdir;
+    if(abs(normal.x) < .5) {
+        sdir = cross(normal, vec3(1, 0, 0));
+    } else {
+        sdir = cross(normal, vec3(0, 1, 0));
+    }
+    tdir = cross(normal, sdir);
+    return r * cos(angle) * sdir + r * sin(angle) * tdir + sqrt(1. - u) * normal;
+}
+
+vec3 bounce(float seed, in vec3 ray, in vec3 norm) {
+    vec3 v = ray - 2.0 * dot(ray, norm) * norm;
+    return getRandomNormalInHemisphere(seed, v);
 }
 
 // 计算像素的颜色
@@ -125,23 +145,25 @@ vec3 trace(in vec3 origin, in vec3 direction) {
         vec2 ID = vec2(-1.0, -1.0);
         float t = 1000.0;
 
-		//intersect the reflected ray with the scene
-        intersect(rayPoint, direction, t, ID);
-        // 相交
+		//相交
+        intersect(rayPoint, rayDirection, t, ID);
         if(ID.x > -1.0) {
-            rayPoint = rayPoint + t * rayDirection * 0.99999;
+            rayPoint = rayPoint + t * rayDirection;
             vec3 norm = normal(rayPoint, ID);
-            rayDirection = bounce(direction, norm);
+
+            rayDirection = bounce(timeSinceStart, rayDirection, norm);
+            rayPoint = rayPoint + rayDirection * 0.0000001;
             material[i] = texture2D(objectMaterials, ID);
         } else {
-            material[i] = vec4(0.0, 0.0, 0.0, 1.0);
+            material[i] = vec4(0.0, 0.0, 0.0, 0.0);
+            break;
         }
     }
 
-    for(int i = MAX_RECURSION; i > 0; i--) {
+    for(int i = MAX_RECURSION; i >= 0; i--) {
         if(i > recursion)
             continue;
-        if(material[i].w < 0.0001)
+        if(material[i].w < 0.00001)
             continue;
         color *= material[i].xyz;
         color += material[i].xyz * material[i].w;
@@ -152,7 +174,7 @@ vec3 trace(in vec3 origin, in vec3 direction) {
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0.4, 1.5, 8.0);
+    vec3 origin = vec3(0, 1.3, 8.0);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
     // 相交
     gl_FragColor = vec4(trace(origin, direction), 1.0);
