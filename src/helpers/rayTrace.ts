@@ -48,7 +48,7 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
     uResolution: uniform.Vec2([size, size]),
     objectTextureSize: objectSideList,
     timeSinceStart: Date.now() * 0.01,
-    dstep: uniform.Int(1),
+    textureWeight: 0,
   };
 }
 
@@ -92,7 +92,7 @@ export const makeRayTrace = () => {
     const mergeTarget = new Scene.RenderTarget(fbo2, [new Scene.PostProcess(mergeShader, { texture: finalFbo, oneTimeTexture: fbo1 }, gl, [])]);
     const mergeTarget1 = new Scene.RenderTarget(finalFbo, [new Scene.PostProcess(postShader, { texture: fbo2 }, gl, [])]);
 
-    const postprocess = new Scene.PostProcess(postShader, { texture: finalFbo }, gl, [oneTimeTarget, mergeTarget, mergeTarget1]);
+    const postprocess = new Scene.PostProcess(postShader, { texture: fbo2 }, gl, [oneTimeTarget, mergeTarget, mergeTarget1]);
     const uniformPostProcess = new Scene.Uniforms(sceneObject, [postprocess]);
 
     scene.append(uniformPostProcess);
@@ -105,10 +105,10 @@ export const makeRayTrace = () => {
     sceneObject.uResolution = uniform.Vec2([size, size]);
 
     function animation(time) {
-      sceneObject.dstep = uniform.Int(dStep);
-      dStep++;
-
       sceneObject.timeSinceStart = time;
+
+      sceneObject.textureWeight = dStep / (dStep + 1);
+      dStep++;
       renderer.render(scene, camera);
     }
   }
