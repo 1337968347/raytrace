@@ -122,12 +122,13 @@ vec3 getRandomNormalInHemisphere(float seed, vec3 normal) {
         sdir = cross(normal, vec3(0, 1, 0));
     }
     tdir = cross(normal, sdir);
+  
     return r * cos(angle) * sdir + r * sin(angle) * tdir + sqrt(1. - u) * normal;
 }
 
 vec3 cosineWeightedDirection(float seed, in vec3 ray, in vec3 norm) {
     vec3 v = normalize(ray - 2.0 * dot(ray, norm) * norm);
-    return getRandomNormalInHemisphere(seed, v);
+    return normalize(getRandomNormalInHemisphere(seed, v));
 }
 
 // 计算像素的颜色
@@ -152,7 +153,7 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
             vec3 norm = normal(rayPoint, ID);
 
             rayDirection = cosineWeightedDirection(timeSinceStart + float(bounce), rayDirection, norm);
-            rayPoint = rayPoint + rayDirection * 0.0001;
+            rayPoint = rayPoint + rayDirection * 0.000001;
             material[i] = texture2D(objectMaterials, ID);
         } else {
             material[i] = vec4(0.0, 0.0, 0.0, 0.0);
@@ -173,7 +174,7 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
 vec3 makeCalculateColor(in vec3 origin, in vec3 direction) {
     vec3 accumulatedColor = vec3(0.0);
     for(int bounce = 0; bounce < 5; bounce++) {
-        vec3 oneRayColor = trace(origin, direction, bounce);
+        vec3 oneRayColor = trace(origin, direction, bounce / 10);
         accumulatedColor += oneRayColor;
     }
 
