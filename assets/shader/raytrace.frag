@@ -4,7 +4,7 @@ precision highp float;
 #define MAX_LIGHT 10
 #define SPHERE 0
 #define PLANE 1
-#define MAX_RECURSION 5
+#define MAX_RECURSION 4
 
 uniform vec2 uResolution;
 uniform float timeSinceStart;
@@ -90,7 +90,7 @@ vec3 nSphere(in vec3 position, in vec3 sphere) {
 
 // 平面的法向量
 vec3 nPhone(in vec3 plane) {
-    return plane;
+    return normalize(plane);
 }
 
 // 获取法向量
@@ -125,13 +125,13 @@ vec3 getRandomNormalInHemisphere(float seed, vec3 normal) {
     return r * cos(angle) * sdir + r * sin(angle) * tdir + sqrt(1. - u) * normal;
 }
 
-vec3 bounce(float seed, in vec3 ray, in vec3 norm) {
-    vec3 v = ray - 2.0 * dot(ray, norm) * norm;
+vec3 cosineWeightedDirection(float seed, in vec3 ray, in vec3 norm) {
+    vec3 v = normalize(ray - 2.0 * dot(ray, norm) * norm);
     return getRandomNormalInHemisphere(seed, v);
 }
 
 // 计算像素的颜色
-vec3 trace(in vec3 origin, in vec3 direction) {
+vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
     vec3 color = vec3(0.0, 0.0, 0.0);
 
     vec4 material[MAX_RECURSION];
@@ -151,7 +151,7 @@ vec3 trace(in vec3 origin, in vec3 direction) {
             rayPoint = rayPoint + t * rayDirection;
             vec3 norm = normal(rayPoint, ID);
 
-            rayDirection = bounce(timeSinceStart, rayDirection, norm);
+            rayDirection = cosineWeightedDirection(timeSinceStart + float(bounce), rayDirection, norm);
             rayPoint = rayPoint + rayDirection * 0.0001;
             material[i] = texture2D(objectMaterials, ID);
         } else {
@@ -163,10 +163,21 @@ vec3 trace(in vec3 origin, in vec3 direction) {
     for(int i = MAX_RECURSION; i >= 0; i--) {
         if(i > recursion)
             continue;
-        // color *= material[i].xyz;
+        color *= material[i].xyz;
         color += material[i].xyz * material[i].w;
     }
     return color;
+}
+
+// 计算颜色
+vec3 makeCalculateColor(in vec3 origin, in vec3 direction) {
+    vec3 accumulatedColor = vec3(0.0);
+    for(int bounce = 0; bounce < 5; bounce++) {
+        vec3 oneRayColor = trace(origin, direction, bounce);
+        accumulatedColor += oneRayColor;
+    }
+
+    return accumulatedColor / 5.0;
 }
 
 void main() {
@@ -175,6 +186,6 @@ void main() {
     vec3 origin = vec3(0, 0.0, 1.5);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
     // 相交
-    gl_FragColor = vec4(trace(origin, direction), 1.0);
+    gl_FragColor = vec4(makeCalculateColor(origin, direction), 1.0);
 
 }
