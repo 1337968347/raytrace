@@ -45,7 +45,7 @@ void iPlane(in vec2 ID, in vec3 origin, in vec3 direction, in vec3 normal, inout
     // p = o + td 光线
     // (o + td - p0) * n = 0  --> tdn = (p0 - o) n --> t = (p0 - 0)n / dn
 
-    float t = (dot(vec3(0.0, 1.0, 0.0), normal) - dot(origin, normal)) / dot(direction, normal);
+    float t = (dot(-normal, normal) - dot(origin, normal)) / dot(direction, normal);
 
     if(t > 0.0 && t < closestIntersection) {
         closestIntersection = t;
@@ -152,7 +152,7 @@ vec3 trace(in vec3 origin, in vec3 direction) {
             vec3 norm = normal(rayPoint, ID);
 
             rayDirection = bounce(timeSinceStart, rayDirection, norm);
-            rayPoint = rayPoint + rayDirection * 0.0000001;
+            rayPoint = rayPoint + rayDirection * 0.0001;
             material[i] = texture2D(objectMaterials, ID);
         } else {
             material[i] = vec4(0.0, 0.0, 0.0, 0.0);
@@ -163,9 +163,7 @@ vec3 trace(in vec3 origin, in vec3 direction) {
     for(int i = MAX_RECURSION; i >= 0; i--) {
         if(i > recursion)
             continue;
-        if(material[i].w < 0.00001)
-            continue;
-        color *= material[i].xyz;
+        // color *= material[i].xyz;
         color += material[i].xyz * material[i].w;
     }
     return color;
@@ -174,7 +172,7 @@ vec3 trace(in vec3 origin, in vec3 direction) {
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0, 1.3, 8.0);
+    vec3 origin = vec3(0, 0.0, 1.5);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
     // 相交
     gl_FragColor = vec4(trace(origin, direction), 1.0);
