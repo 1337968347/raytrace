@@ -6,19 +6,19 @@ import { screen_quad } from '../engine/mesh';
 import { ShaderManager } from '../engine/shader';
 import { Sphere, Plane, RenderObject } from './object';
 
-const size = 512;
+const size = 1024;
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([-0.2, 0, 0, 0.17], [0.8, 0.8, 0.8, 0.0]));
-  renderObjects.push(new Sphere([0.26, -0.3, 0, 0.07], [0.2, 0.2, 0.8, 0.0]));
-  renderObjects.push(new Sphere([0.26, 0.0, 0, 0.25], [0.8, 0.3, 0.3, 1.0]));
+  renderObjects.push(new Sphere([-0.2, 0, -0.08, 0.17], [1.8, 0.8, 0.8, 0.0]));
+  renderObjects.push(new Sphere([-0.06, -0.45, 0.3, 0.07], [0.2, 0.2, 0.8, 0.0]));
+  renderObjects.push(new Sphere([0.26, -0.25, -0.15, 0.2], [1.8, 1.3, 0.3, 2.9]));
 
-  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.5, 0.5, 0.5, 0.2]));
-  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.5, 0.5, 0.2]));
-  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.5, 0.2]));
-  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.5, 0.5, 0.5, 0.2]));
-  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.5, 0.5, 0.5, 0.2]));
+  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.8, 0.5, 0.5, 0.0]));
+  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.8, 0.8, 0.0]));
+  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.8, 0.0]));
+  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.8, 0.5, 0.8, 0.0]));
+  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.8, 0.8, 0.5, 0.0]));
 
   return buildScene(renderObjects, gl);
 }
@@ -111,7 +111,7 @@ export const makeRayTrace = () => {
     let startTime = Date.now();
 
     function animation() {
-      sceneObject.timeSinceStart = (Date.now() - startTime) / 1000;
+      sceneObject.timeSinceStart = (Date.now() - startTime) / 1000000;
       sceneObject.textureWeight = dStep / (dStep + 1);
       dStep++;
       renderer.render(scene, camera);
