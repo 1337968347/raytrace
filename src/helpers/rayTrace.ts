@@ -10,15 +10,15 @@ const size = 1024;
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([-0.2, 0, -0.08, 0.17], [1.8, 0.8, 0.8, 0.2]));
-  renderObjects.push(new Sphere([-0.06, -0.45, 0.3, 0.07], [0.2, 0.2, 0.8, 0.2]));
-  renderObjects.push(new Sphere([0.26, -0.25, 0.15, 0.2], [1.8, 1.3, 0.3, 1.9]));
+  renderObjects.push(new Sphere([-0.2, 0, -0.18, 0.07], [1.8, 0.8, 0.8, 0.0], [0.2, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([-0.06, -0.45, 0.3, 0.07], [0.2, 0.2, 0.8, 0.0], [0.2, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([0.06, -0.35, 0.15, 0.15], [1.0, 1.0, 1.0, 8.0], [0.2, 0.0, 0.0, 0.0]));
 
-  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.8, 0.5, 0.5, 0.0]));
-  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.8, 0.8, 0.3]));
-  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.8, 0.0]));
-  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.8, 0.5, 0.8, 0.0]));
-  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.8, 0.8, 0.5, 0.0]));
+  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.8, 0.5, 0.5, 0.0], [0.9, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.8, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.8, 0.5, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.8, 0.8, 0.5, 0.0], [0.9, 0.0, 0.0, 0.0]));
 
   return buildScene(renderObjects, gl);
 }
@@ -27,12 +27,14 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
   let objects = [];
   let objectPositions = [];
   let objectMaterials = [];
+  let objectMaterialsExtended = [];
   let numObjects = 0;
 
   for (const item of renderObjects) {
     objects = objects.concat([item.type, 0, 0, 0]);
     objectPositions = objectPositions.concat(item.position);
     objectMaterials = objectMaterials.concat(item.materials);
+    objectMaterialsExtended = objectMaterialsExtended.concat(item.objectMaterialsExtended);
     numObjects++;
   }
 
@@ -42,12 +44,14 @@ function buildScene(renderObjects: RenderObject[], gl: WebGLRenderingContext) {
     objects = objects.concat([0, 0, 0, 0]);
     objectPositions = objectPositions.concat([0, 0, 0, 0]);
     objectMaterials = objectMaterials.concat([0, 0, 0, 0]);
+    objectMaterialsExtended = objectMaterialsExtended.concat([0, 0, 0, 0]);
   }
 
   return {
     objects: new Texture2D(new Uint8Array(objects), gl, objectSideList, gl.UNSIGNED_BYTE),
     objectPositions: new Texture2D(new Float32Array(objectPositions), gl, objectSideList),
     objectMaterials: new Texture2D(new Float32Array(objectMaterials), gl, objectSideList),
+    objectMaterialsExtended: new Texture2D(new Float32Array(objectMaterialsExtended), gl, objectSideList),
     numObjects: uniform.Int(numObjects),
     uResolution: uniform.Vec2([size, size]),
     objectTextureSize: objectSideList,

@@ -8,10 +8,12 @@ export class RenderObject {
   type: number;
   position: Vec4;
   materials: Vec4;
+  objectMaterialsExtended: Vec4;
 
-  constructor(position: Vec4, materials: Vec4) {
+  constructor(position: Vec4, materials: Vec4, objectMaterialsExtended: Vec4) {
     this.position = position;
     this.materials = materials;
+    this.objectMaterialsExtended = objectMaterialsExtended;
   }
 }
 
@@ -19,8 +21,8 @@ export class RenderObject {
  * 球
  */
 export class Sphere extends RenderObject {
-  constructor(position: Vec4, materials: Vec4) {
-    super(position, materials);
+  constructor(position: Vec4, materials: Vec4, objectMaterialsExtended: Vec4) {
+    super(position, materials, objectMaterialsExtended);
     this.type = SPHERE_TYPE;
   }
 }
@@ -29,18 +31,9 @@ export class Sphere extends RenderObject {
  * 平面
  */
 export class Plane extends RenderObject {
-  constructor(position: Vec4, materials: Vec4) {
-    super(position, materials);
+  objectMaterialsExtended: Vec4;
+  constructor(position: Vec4, materials: Vec4, objectMaterialsExtended: Vec4) {
+    super(position, materials,objectMaterialsExtended);
     this.type = PLANE_TYPE;
-  }
-}
-
-/**
- * 光线
- */
-export class Light extends RenderObject {
-  constructor(position: Vec4, materials: Vec4) {
-    super(position, materials);
-    this.type = LIGHT_TYPE;
   }
 }

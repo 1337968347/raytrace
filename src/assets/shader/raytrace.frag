@@ -4,14 +4,15 @@ precision highp float;
 #define MAX_LIGHT 10
 #define SPHERE 0
 #define PLANE 1
-#define MAX_RECURSION 4
+#define MAX_RECURSION 5
 
 uniform vec2 uResolution;
 uniform float timeSinceStart;
 
-uniform sampler2D objects;  //[index, type, null, null]
+uniform sampler2D objects;  //[type, null, null, null]
 uniform sampler2D objectPositions; // [x, y, z, width]
 uniform sampler2D objectMaterials; // [r, g, b, light]
+uniform sampler2D objectMaterialsExtended; // [reflect, null, null, null]
 
 uniform int numObjects;
 uniform float objectTextureSize;
@@ -122,7 +123,7 @@ vec3 getRandomNormalInHemisphere(float seed, vec3 normal) {
         sdir = cross(normal, vec3(0, 1, 0));
     }
     tdir = cross(normal, sdir);
-  
+
     return r * cos(angle) * sdir + r * sin(angle) * tdir + sqrt(1. - u) * normal;
 }
 
@@ -136,6 +137,8 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
     vec3 color = vec3(0.0, 0.0, 0.0);
 
     vec4 material[MAX_RECURSION];
+    vec4 materialsExtended[MAX_RECURSION];
+
     int recursion = 0;
 
     vec3 rayPoint = origin;
@@ -155,8 +158,10 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
             rayDirection = cosineWeightedDirection(timeSinceStart + float(bounce), rayDirection, norm);
             rayPoint = rayPoint + rayDirection * 0.000001;
             material[i] = texture2D(objectMaterials, ID);
+            materialsExtended[i] = texture2D(objectMaterialsExtended, ID);
         } else {
             material[i] = vec4(0.0, 0.0, 0.0, 0.0);
+            materialsExtended[i] = vec4(0.0, 0.0, 0.0, 0.0);
             break;
         }
     }
@@ -164,8 +169,9 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
     for(int i = MAX_RECURSION; i >= 0; i--) {
         if(i > recursion)
             continue;
-        color *= material[i].xyz;
-        color += material[i].xyz * material[i].w;
+        float reflect = materialsExtended[i].x;
+        color *= material[i].xyz * reflect;
+        color += material[i].xyz * material[i].w ;
     }
     return color;
 }
@@ -174,7 +180,7 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
 vec3 makeCalculateColor(in vec3 origin, in vec3 direction) {
     vec3 accumulatedColor = vec3(0.0);
     for(int bounce = 0; bounce < 5; bounce++) {
-        vec3 oneRayColor = trace(origin, direction, bounce / 10);
+        vec3 oneRayColor = trace(origin, direction, bounce * 100);
         accumulatedColor += oneRayColor;
     }
 
@@ -184,7 +190,7 @@ vec3 makeCalculateColor(in vec3 origin, in vec3 direction) {
 void main() {
     gl_FragColor = vec4(0.0);
 
-    vec3 origin = vec3(0, 0.0, 1.5);
+    vec3 origin = vec3(0, 0.0, 1.8);
     vec3 direction = normalize(vec3(gl_FragCoord.xy / uResolution - 0.5, -1.0));
     // 相交
     gl_FragColor = vec4(makeCalculateColor(origin, direction), 1.0);
