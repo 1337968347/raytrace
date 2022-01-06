@@ -159,9 +159,11 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
             rayPoint = rayPoint + rayDirection * 0.000001;
             material[i] = texture2D(objectMaterials, ID);
             materialsExtended[i] = texture2D(objectMaterialsExtended, ID);
+            materialsExtended[i].y = dot(norm, rayDirection);
         } else {
             material[i] = vec4(0.0, 0.0, 0.0, 0.0);
             materialsExtended[i] = vec4(0.0, 0.0, 0.0, 0.0);
+            materialsExtended[i].y = 1.0;
             break;
         }
     }
@@ -171,7 +173,7 @@ vec3 trace(in vec3 origin, in vec3 direction, in int bounce) {
             continue;
         float reflect = materialsExtended[i].x;
         color *= material[i].xyz * reflect;
-        color += material[i].xyz * material[i].w ;
+        color += materialsExtended[i].y * material[i].xyz * material[i].w;
     }
     return color;
 }
