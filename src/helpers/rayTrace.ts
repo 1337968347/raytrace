@@ -6,19 +6,20 @@ import { screen_quad } from '../engine/mesh';
 import { ShaderManager } from '../engine/shader';
 import { Sphere, Plane, RenderObject } from './object';
 
-const size = 1024;
+const size = 700;
 
 function makeScene(gl: WebGLRenderingContext) {
   const renderObjects = [];
-  renderObjects.push(new Sphere([-0.2, 0, -0.18, 0.07], [1.8, 0.8, 0.8, 0.0], [0.2, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Sphere([-0.06, -0.45, 0.3, 0.07], [0.2, 0.2, 0.8, 0.0], [0.2, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Sphere([0.06, -0.35, 0.15, 0.15], [1.0, 1.0, 1.0, 8.0], [0.2, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([-0.2, 0, -0.28, 0.07], [1.8, 0.8, 0.8, 0.0], [0.5, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([-0.15, -0.45, 0.45, 0.07], [0.2, 0.2, 0.8, 0.0], [0.5, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Sphere([0.1, -0.3, 0.4, 0.18], [1.0, 1.0, 1.0, 7.0], [0.2, 0.0, 0.0, 0.0]));
 
-  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.8, 0.5, 0.5, 0.0], [0.9, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.8, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.8, 0.5, 0.8, 0.0], [0.9, 0.0, 0.0, 0.0]));
-  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.8, 0.8, 0.5, 0.0], [0.9, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, 0.5, 0, 0], [0.8, 0.5, 0.5, 0.0], [0.7, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, -0.5, 0, 0], [0.5, 0.8, 0.8, 0.0], [0.7, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0.5, 0, 0, 0], [0.5, 0.5, 0.8, 0.0], [0.7, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([-0.5, 0, 0, 0], [0.8, 0.5, 0.8, 0.0], [0.7, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, 0, 0.5, 0], [0.8, 0.8, 0.5, 0.0], [0.7, 0.0, 0.0, 0.0]));
+  renderObjects.push(new Plane([0, 0, -2.1, 0], [0.8, 0.8, 0.5, 0.0], [0.7, 0.0, 0.0, 0.0]));
 
   return buildScene(renderObjects, gl);
 }
@@ -116,8 +117,8 @@ export const makeRayTrace = () => {
 
     function animation() {
       sceneObject.timeSinceStart = (Date.now() - startTime) / 1000;
-      sceneObject.textureWeight = dStep / (dStep + 1);
       dStep++;
+      sceneObject.textureWeight = (dStep - 1) / dStep;
       renderer.render(scene, camera);
     }
   }
